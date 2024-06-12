@@ -9,7 +9,7 @@ resource "azurerm_resource_group" "terraform-rg" {
   tags = var.resource_tags
 }
 
-### NETWORK AND SUBNETS ###
+### VNETs ###
 resource "azurerm_virtual_network" "terraform-vnets" {
   for_each            = var.vnets
   name                = each.key
@@ -20,6 +20,7 @@ resource "azurerm_virtual_network" "terraform-vnets" {
   tags = var.resource_tags
 }
 
+### SUBNETS ###
 # https://stackoverflow.com/questions/71858918/multiple-vnets-and-subnets-using-terraform-modules
 # https://developer.hashicorp.com/terraform/language/functions/flatten
 # Flatten subnets to circumvent for_each only supporting one element in each repetition
@@ -92,6 +93,26 @@ resource "azurerm_network_interface_security_group_association" "allow-ssh" {
   network_security_group_id = azurerm_network_security_group.ssh-nsg.id
 }
 
+### SSH KEY MANAGEMENT ###
+
+# Stores specified SSH key in azure SSH keys blade
+/*
+resource "azurerm_ssh_public_key" "linux-ssh-key" {
+  name = "${var.prefix}-ssh"
+  resource_group_name = azurerm_resource_group.terraform-rg.name
+  location = azurerm_resource_group.terraform-rg.location
+  public_key = file("./test.pub")
+
+  tags = var.resource_tags
+}
+*/
+
+# Find existing ssh key, need private key locally
+data "azurerm_ssh_public_key" "linux-ssh-key" {
+  name                = "Terraform-practice-ssh"
+  resource_group_name = "brogen-rg"
+}
+
 ### LINUX VM ###
 # https://github.com/hashicorp/terraform-provider-azurerm/blob/main/examples/virtual-machines/linux/basic-ssh/main.tf
 resource "azurerm_linux_virtual_machine" "terraform-linux-vm" {
@@ -103,11 +124,15 @@ resource "azurerm_linux_virtual_machine" "terraform-linux-vm" {
   network_interface_ids = [
     azurerm_network_interface.linux-nic.id
   ]
-  
-  # NB! assumes RSA key already exists
+
   admin_ssh_key {
-    username   = "adminuser"
-    public_key = file("~/.ssh/id_rsa.pub")
+    username = "adminuser"
+    # NB! assumes RSA key already exists
+    #public_key = file("~/.ssh/id_rsa.pub")
+    # Uses the resource azurerm_ssh_public_key
+    #public_key = azurerm_ssh_public_key.linux-ssh-key.public_key
+    # Used the data source azurerm_ssh_public_key
+    public_key = data.azurerm_ssh_public_key.linux-ssh-key.public_key
   }
 
   source_image_reference {
