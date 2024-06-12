@@ -9,7 +9,7 @@ resource "azurerm_resource_group" "terraform-rg" {
   tags = var.resource_tags
 }
 
-### NETWORK ###
+### NETWORK AND SUBNETS ###
 resource "azurerm_virtual_network" "terraform-vnets" {
   for_each            = var.vnets
   name                = each.key
@@ -44,8 +44,34 @@ resource "azurerm_subnet" "terraform-subnets" {
   address_prefixes     = [each.value.subnet_address]
 }
 
-### LINUX VM ###
-resource "azurerm_network_interface" "linux_nic" {
+### NETWORK CONFIG FOR LINUX VM ###
+# https://learn.microsoft.com/en-us/azure/virtual-machines/linux/quick-create-terraform?tabs=azure-cli
+resource "azurerm_public_ip" "linux-public-ip" {
+  name                = "${var.prefix}-public-ip"
+  resource_group_name = azurerm_resource_group.terraform-rg.name
+  location            = azurerm_resource_group.terraform-rg.location
+  allocation_method   = "Dynamic"
+}
+
+resource "azurerm_network_security_group" "ssh-nsg" {
+  name                = "${var.prefix}-nsg"
+  resource_group_name = azurerm_resource_group.terraform-rg.name
+  location            = azurerm_resource_group.terraform-rg.location
+
+  security_rule {
+    name                       = "SSH"
+    priority                   = 1001
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "22"
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
+}
+
+resource "azurerm_network_interface" "linux-nic" {
   name                = "${var.prefix}-nic"
   resource_group_name = azurerm_resource_group.terraform-rg.name
   location            = azurerm_resource_group.terraform-rg.location
@@ -55,6 +81,44 @@ resource "azurerm_network_interface" "linux_nic" {
     # Puts the NIC in the first created subnet, hardcoded as key need to be name as of now
     subnet_id                     = azurerm_subnet.terraform-subnets["terraform-practice-subnet1"].id
     private_ip_address_allocation = "Dynamic"
+    public_ip_address_id          = azurerm_public_ip.linux-public-ip.id
+  }
+
+  tags = var.resource_tags
+}
+
+resource "azurerm_network_interface_security_group_association" "allow-ssh" {
+  network_interface_id      = azurerm_network_interface.linux-nic.id
+  network_security_group_id = azurerm_network_security_group.ssh-nsg.id
+}
+
+### LINUX VM ###
+resource "azurerm_linux_virtual_machine" "terraform-linux-vm" {
+  name                = "${var.prefix}-linuxVM"
+  resource_group_name = azurerm_resource_group.terraform-rg.name
+  location            = azurerm_resource_group.terraform-rg.location
+  size                = "Standard_F2"
+  admin_username      = "adminuser"
+  network_interface_ids = [
+    azurerm_network_interface.linux-nic.id
+  ]
+  
+  # NB! assumes RSA key already exists
+  admin_ssh_key {
+    username   = "adminuser"
+    public_key = file("~/.ssh/id_rsa.pub")
+  }
+
+  source_image_reference {
+    publisher = "Canonical"
+    offer     = "0001-com-ubuntu-server-jammy"
+    sku       = "22_04-lts"
+    version   = "latest"
+  }
+
+  os_disk {
+    storage_account_type = "Standard_LRS"
+    caching              = "ReadWrite"
   }
 
   tags = var.resource_tags
