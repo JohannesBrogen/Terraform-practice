@@ -93,6 +93,7 @@ resource "azurerm_network_interface_security_group_association" "allow-ssh" {
 }
 
 ### LINUX VM ###
+# https://github.com/hashicorp/terraform-provider-azurerm/blob/main/examples/virtual-machines/linux/basic-ssh/main.tf
 resource "azurerm_linux_virtual_machine" "terraform-linux-vm" {
   name                = "${var.prefix}-linuxVM"
   resource_group_name = azurerm_resource_group.terraform-rg.name
