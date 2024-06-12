@@ -10,6 +10,7 @@ variable "prefix" {
   default     = "Terraform-practice"
 }
 
+# https://stackoverflow.com/questions/71858918/multiple-vnets-and-subnets-using-terraform-modules
 variable "vnets" {
   description = "Vnet address space and connected subnets"
   type = map(object({
