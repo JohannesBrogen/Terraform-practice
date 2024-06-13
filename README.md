@@ -1,5 +1,10 @@
 # Terraform-practice
+- [Use](#use)
+  - [Managing ssh keys](#managing-ssh-keys)
+- [Modules](#modules)
+  - [Network](#network)
 
+## USE
 #### MANAGING SSH KEYS
 1. Pass the public key from local pre-generated key-pair
 ```HCL
