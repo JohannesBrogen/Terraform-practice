@@ -1,7 +1,9 @@
+/*
 output "subnet_ids" {
   description = "Outputs all the subnet ids"
-  value       = { for k, v in azurerm_subnet.terraform-subnets : k => v.id }
+  value       = module.network.subnet_ids
 }
+*/
 
 output "linux_private_ip" {
   value = azurerm_linux_virtual_machine.terraform-linux-vm.private_ip_address
