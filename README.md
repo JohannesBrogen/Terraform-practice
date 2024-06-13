@@ -3,6 +3,7 @@
   - [Managing ssh keys](#managing-ssh-keys)
 - [Modules](#modules)
   - [Network](#network)
+  - [VM-access](#vm-access)
 
 ## USE
 #### MANAGING SSH KEYS
@@ -19,7 +20,9 @@ resource "azurerm_linux_virtual_machine" "terraform-linux-vm" {
 2. Add pre-generated public key to azure ssh key blade
 ```HCL
 resource "azurerm_ssh_public_key" "linux-ssh-key" {
-...
+  name = "${var.prefix}-ssh"
+  resource_group_name = azurerm_resource_group.terraform-rg.name
+  location = azurerm_resource_group.terraform-rg.location
   public_key = file("***filepath to public key***")
 ...
 }
@@ -57,6 +60,9 @@ and
 - location
 - network_conf
 - *optional*: resource_tags
+
+**Outputs:**
+- subnet_ids
 
 ***Creates virtual networks and associated subnets from a configuration variable:***
 ```HCL
@@ -97,4 +103,33 @@ E.g.
       ]
     }
 ...
+```
+### VM-access
+**Variables:**
+- name_prefix
+- resource_group
+- location
+- subnet_id
+- security_rules
+- *optional*: resource_tags
+
+**Outputs:**
+- nic_id
+
+***Creates one or more security rules defined in security_rules variable***
+```HCL
+variable "security_rules" {
+  description = "List of security rule(s) configurations"
+  type = list(object({
+    name                       = string
+    priority                   = number
+    direction                  = string
+    access                     = string
+    protocol                   = string
+    source_port_range          = string
+    destination_port_range     = string
+    source_address_prefix      = string
+    destination_address_prefix = string
+  }))
+}
 ```
