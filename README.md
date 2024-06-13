@@ -43,3 +43,53 @@ and
   }
 ...
 ```
+
+### MODULES
+
+#### Network
+**Variables:**
+- resource_group
+- location
+- network_conf
+- *optional*: resource_tags
+ 
+***Creates virtual networks and associated subnets from a configuration variable:***
+```HCL
+variable "vnets" {
+  description = "Vnet address space and connected subnets"
+  type = map(object({
+    address_space = string
+    subnets = list(object({
+      subnet_name    = string
+      subnet_address = string
+    }))
+  }))
+}
+```
+E.g.
+```HCL
+...
+    "vnet-1" = {
+      address_space = "10.0.0.0/16"
+      subnets = [
+        {
+          subnet_name    = "vnet-1-subnet1"
+          subnet_address = "10.0.1.0/24"
+        },
+      ]
+    },
+    "vnet-2" = {
+      address_space = "192.168.0.0/16"
+      subnets = [
+        {
+          subnet_name    = "vnet-2-subnet1"
+          subnet_address = "192.168.1.0/24"
+        },
+        {
+          subnet_name    = "vnet-2-subnet2"
+          subnet_address = "192.168.2.0/24"
+        },
+      ]
+    }
+...
+```
