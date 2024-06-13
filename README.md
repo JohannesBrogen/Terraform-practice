@@ -44,15 +44,15 @@ and
 ...
 ```
 
-### MODULES
+## MODULES
 
-#### Network
+### Network
 **Variables:**
 - resource_group
 - location
 - network_conf
 - *optional*: resource_tags
- 
+
 ***Creates virtual networks and associated subnets from a configuration variable:***
 ```HCL
 variable "vnets" {
