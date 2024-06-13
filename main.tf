@@ -13,14 +13,15 @@ resource "azurerm_resource_group" "terraform-rg" {
 ### Network ###
 # Creates vnets and associated subnets from the vnet variable configuration
 module "network" {
-  source = "./modules/network"
+  source         = "./modules/network"
   resource_group = azurerm_resource_group.terraform-rg.name
-  location = azurerm_resource_group.terraform-rg.location
-  network_conf = var.vnets
+  location       = azurerm_resource_group.terraform-rg.location
+  network_conf   = var.vnets
 
   resource_tags = var.resource_tags
 }
 
+/*
 ### NETWORK CONFIG FOR LINUX VM ###
 # https://learn.microsoft.com/en-us/azure/virtual-machines/linux/quick-create-terraform?tabs=azure-cli
 resource "azurerm_public_ip" "linux-public-ip" {
@@ -70,6 +71,19 @@ resource "azurerm_network_interface_security_group_association" "allow-ssh" {
   network_security_group_id = azurerm_network_security_group.ssh-nsg.id
 }
 
+*/
+### NETWORK CONFIG ###
+# Creates public IP, NIC, NSG and associated security group(s)
+module "vm-access" {
+  source         = "./modules/vm-access"
+  name_prefix    = var.prefix
+  resource_group = azurerm_resource_group.terraform-rg.name
+  location       = azurerm_resource_group.terraform-rg.location
+  subnet_id = module.network.subnet_ids["terraform-practice-subnet1"]
+
+  resource_tags = var.resource_tags
+}
+
 ### SSH KEY MANAGEMENT ###
 
 # Stores specified SSH key in azure SSH keys blade
@@ -99,7 +113,7 @@ resource "azurerm_linux_virtual_machine" "terraform-linux-vm" {
   size                = "Standard_F2"
   admin_username      = "adminuser"
   network_interface_ids = [
-    azurerm_network_interface.linux-nic.id
+    module.vm-access.nic_id
   ]
 
   admin_ssh_key {
