@@ -1,4 +1,5 @@
 # Terraform-practice
+This project uses terraform to create scalable network configuration for Azure and a linux vm to test with ssh.
 - [Use](#use)
   - [Managing ssh keys](#managing-ssh-keys)
 - [Modules](#modules)
